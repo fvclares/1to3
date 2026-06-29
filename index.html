@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Desafio dos Reflexos: Arena Justa</title>
+    <title>Desafio dos Reflexos: Arena Fixa</title>
     <style>
         * {
             box-sizing: border-box;
@@ -21,15 +21,14 @@
             justify-content: center;
             min-height: 100vh;
             padding: 20px;
-            overflow: hidden;
         }
 
         #game-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 100%;
-            max-width: 1000px;
+            /* O container agora se baseia na largura exata da arena */
+            width: 800px; 
         }
 
         .hud {
@@ -49,16 +48,18 @@
             font-weight: bold;
         }
 
-        /* Arena de Jogo Protegida e Proporcional */
+        /* Arena com tamanho totalmente estático e inalterável */
         #game-area {
             position: relative;
-            width: 100%;
-            aspect-ratio: 16 / 9; /* Proporção de tela de cinema/monitores */
+            width: 800px;
+            height: 450px;
             background: #151324;
             border: 3px solid #00fff0;
             border-radius: 18px;
             overflow: hidden;
             box-shadow: 0 0 25px rgba(0, 255, 240, 0.2);
+            /* Garante que o navegador não tente esmagar a div */
+            flex-shrink: 0; 
         }
 
         #target-number {
@@ -77,7 +78,7 @@
             user-select: none;
             box-shadow: 0 0 20px rgba(233, 69, 96, 0.6);
             transition: transform 0.05s ease;
-            display: none; /* Escondido até começar */
+            display: none;
             z-index: 5;
         }
 
@@ -85,7 +86,6 @@
             transform: scale(0.9);
         }
 
-        /* Telas de Menu (Início / Game Over) */
         .menu-screen {
             position: absolute;
             top: 50%;
@@ -96,8 +96,7 @@
             border-radius: 15px;
             box-shadow: 0 0 40px rgba(0,0,0,0.7);
             z-index: 20;
-            max-width: 450px;
-            width: 85%;
+            width: 450px;
             text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
@@ -138,7 +137,7 @@
 
             <div id="menu" class="menu-screen">
                 <h1 id="menu-title">Reflexo 1-2-3</h1>
-                <p id="menu-text">Clique nos números na ordem (1 -> 2 -> 3). A cada ciclo, a velocidade aumenta. Encolher a tela não vai te ajudar aqui!</p>
+                <p id="menu-text">Clique nos números na ordem correta. A arena tem tamanho fixo de 800x450 — sem trapaças permitidas!</p>
                 <button id="start-btn" onclick="startGame()">Iniciar Desafio</button>
             </div>
         </div>
@@ -162,17 +161,18 @@
         let gameInterval = null;
         let hasClickedCurrent = false;
 
-        // Movimentação restrita estritamente aos limites internos da Arena
         function moveTarget() {
-            const rect = gameArea.getBoundingClientRect();
-            const targetSize = 90; // Diâmetro do círculo do número
-            const padding = 20;    // Margem de segurança para não colar na borda interna
+            // Como o tamanho é estritamente fixo, podemos usar os valores diretos da nossa arena (800x450)
+            const arenaWidth = 800;
+            const arenaHeight = 450;
+            const targetSize = 90; 
+            const padding = 25;    
 
-            // Limites baseados no tamanho real atual da div da arena
-            const maxX = rect.width - targetSize - (padding * 2);
-            const maxY = rect.height - targetSize - (padding * 2);
+            // Espaço máximo real descontando o tamanho da bola e as margens
+            const maxX = arenaWidth - targetSize - (padding * 2);
+            const maxY = arenaHeight - targetSize - (padding * 2);
             
-            // Cálculo baseado na proporção interna, independente do zoom ou janela externa
+            // Sorteia a posição exata dentro do grid fixo
             const randomX = Math.random() * maxX + padding;
             const randomY = Math.random() * maxY + padding;
 
@@ -198,17 +198,14 @@
         }
 
         target.addEventListener('mousedown', (e) => {
-            // Evita comportamentos estranhos de duplo clique em telas touch
             e.preventDefault(); 
-            
             hasClickedCurrent = true;
             clearInterval(gameInterval);
 
             if (currentExpected === 3) {
                 currentExpected = 1;
                 level++;
-                // Dificuldade progressiva: reduz o tempo em 12% por nível
-                currentSpeed = Math.max(200, Math.floor(currentSpeed * 0.88)); 
+                currentSpeed = Math.max(180, Math.floor(currentSpeed * 0.88)); 
                 
                 levelDisplay.textContent = level;
                 speedDisplay.textContent = currentSpeed;
@@ -238,7 +235,7 @@
             target.style.display = 'none';
             
             menuTitle.textContent = "Fim de Jogo!";
-            menuText.innerHTML = `${reason}<br><br>Você alcançou o <strong>Nível ${level}</strong><br>Velocidade de resposta: <strong>${currentSpeed}ms</strong>`;
+            menuText.innerHTML = `${reason}<br><br>Você alcançou o <strong>Nível ${level}</strong><br>Velocidade final: <strong>${currentSpeed}ms</strong>`;
             startBtn.textContent = "Jogar Novamente";
             menu.style.display = 'block';
         }
