@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafio dos Reflexos: 1 a 3</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #1a1a2e;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            text-align: center;
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-around;
+            font-size: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+
+        #target-number {
+            position: absolute;
+            font-size: 5rem;
+            font-weight: bold;
+            background: #e94560;
+            color: white;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.6);
+            transition: transform 0.1s ease;
+            display: none; /* Escondido até começar */
+        }
+
+        #target-number:active {
+            transform: scale(0.9);
+        }
+
+        .menu-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            z-index: 20;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h1 { margin-bottom: 15px; color: #00fff0; }
+        p { margin-bottom: 20px; color: #95a5a6; line-height: 1.4; }
+
+        button {
+            background: #0f3460;
+            color: white;
+            border: 2px solid #00fff0;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #00fff0;
+            color: #1a1a2e;
+            box-shadow: 0 0 15px #00fff0;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div class="hud">
+            <div>Nível: <span id="level-display">1</span></div>
+            <div>Tempo Limite: <span id="speed-display">2000</span>ms</div>
+        </div>
+
+        <div id="target-number">1</div>
+
+        <div id="menu" class="menu-screen">
+            <h1 id="menu-title">Reflexo 1-2-3</h1>
+            <p id="menu-text">Clique nos números 1, 2 e 3 na ordem correta antes que o tempo acabe. A cada ciclo completo, a velocidade aumenta!</p>
+            <button id="start-btn" onclick="startGame()">Jogar</button>
+        </div>
+    </div>
+
+    <script>
+        const target = document.getElementById('target-number');
+        const menu = document.getElementById('menu');
+        const menuTitle = document.getElementById('menu-title');
+        const menuText = document.getElementById('menu-text');
+        const startBtn = document.getElementById('start-btn');
+        
+        const levelDisplay = document.getElementById('level-display');
+        const speedDisplay = document.getElementById('speed-display');
+
+        let currentExpected = 1;
+        let level = 1;
+        let baseSpeed = 2000; // Tempo inicial em milisegundos (2 segundos)
+        let currentSpeed = baseSpeed;
+        let gameInterval = null;
+        let hasClickedCurrent = false;
+
+        // Função para gerar posição aleatória na tela (evitando as bordas e o HUD)
+        function moveTarget() {
+            const padding = 120; 
+            const maxX = window.innerWidth - padding;
+            const maxY = window.innerHeight - padding - 80; // Desconto do HUD
+            
+            const randomX = Math.floor(Math.random() * (maxX - padding)) + padding/2;
+            const randomY = Math.floor(Math.random() * (maxY - padding)) + padding + 40;
+
+            target.style.left = `${randomX}px`;
+            target.style.top = `${randomY}px`;
+        }
+
+        function spawnNumber() {
+            // Se o jogador não clicou no número anterior a tempo: Game Over
+            if (!hasClickedCurrent && gameInterval !== null) {
+                gameOver("Tempo esgotado!");
+                return;
+            }
+
+            hasClickedCurrent = false;
+            target.textContent = currentExpected;
+            moveTarget();
+            target.style.display = 'flex';
+
+            // Reinicia o temporizador para este número específico
+            clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                gameOver("Muito lento! O tempo acabou.");
+            }, currentSpeed);
+        }
+
+        // Evento de clique no número
+        target.addEventListener('mousedown', () => {
+            hasClickedCurrent = true;
+            clearInterval(gameInterval); // Pausa o timer temporariamente
+
+            if (currentExpected === 3) {
+                // Completou a sequência 1-2-3 -> Aumenta o nível e a velocidade
+                currentExpected = 1;
+                level++;
+                // Reduz o tempo em 12% a cada nível (aumento exponencial de dificuldade)
+                currentSpeed = Math.max(250, Math.floor(currentSpeed * 0.88)); 
+                
+                levelDisplay.textContent = level;
+                speedDisplay.textContent = currentSpeed;
+            } else {
+                currentExpected++;
+            }
+
+            // Próximo número aparece imediatamente ao clicar no correto
+            spawnNumber();
+        });
+
+        function startGame() {
+            // Reset de variáveis
+            level = 1;
+            currentExpected = 1;
+            currentSpeed = baseSpeed;
+            hasClickedCurrent = true; // Flag inicial para o primeiro spawn
+            
+            levelDisplay.textContent = level;
+            speedDisplay.textContent = currentSpeed;
+            
+            menu.style.display = 'none';
+            spawnNumber();
+        }
+
+        function gameOver(reason) {
+            clearInterval(gameInterval);
+            gameInterval = null;
+            target.style.display = 'none';
+            
+            menuTitle.textContent = "Fim de Jogo!";
+            menuText.innerHTML = `${reason}<br><br><strong>Você chegou ao Nível: ${level}</strong><br>Velocidade final: ${currentSpeed}ms`;
+            startBtn.textContent = "Tentar Novamente";
+            menu.style.display = 'block';
+        }
+
+        // Ajusta a posição se a tela mudar de tamanho (ex: girar o celular)
+        window.addEventListener('resize', () => {
+            if(gameInterval) moveTarget();
+        });
+    </script>
+</body>
+</html>
